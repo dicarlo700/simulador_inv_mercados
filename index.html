@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Simulaciones - Investigación de Mercados</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            navy: '#0f172a',
+                            blue: '#0369a1',
+                            orange: '#ea580c',
+                            light: '#f8fafc',
+                            gray: '#475569'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ea580c;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-72 bg-brand-navy text-white flex flex-col h-full shadow-2xl z-10">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="font-serif text-2xl font-bold text-white leading-tight">
+                Simulador <span class="text-brand-orange block text-sm font-sans uppercase tracking-widest mt-1">Investigación de Mercados</span>
+            </h1>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <button onclick="switchTab('sim1')" id="btn-sim1" class="w-full flex items-center gap-3 px-4 py-3 bg-brand-blue text-white rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-laptop-code w-5 text-center"></i>
+                1. Plataforma Educativa
+            </button>
+            
+            <button onclick="switchTab('sim2')" id="btn-sim2" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-users w-5 text-center"></i>
+                2. Cafetería (Muestreo)
+            </button>
+            
+            <button onclick="switchTab('sim3')" id="btn-sim3" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-bottle-water w-5 text-center"></i>
+                3. Bebida Saludable
+            </button>
+
+            <button onclick="switchTab('sim4')" id="btn-sim4" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-heart-circle-check w-5 text-center"></i>
+                4. Análisis de Lealtad (NPS)
+            </button>
+
+            <button onclick="switchTab('sim5')" id="btn-sim5" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-vial w-5 text-center"></i>
+                5. Diseño Causal (Prueba A/B)
+            </button>
+
+            <button onclick="switchTab('sim6')" id="btn-sim6" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors text-left font-medium">
+                <i class="fa-solid fa-triangle-exclamation w-5 text-center"></i>
+                6. Error Total de Encuesta
+            </button>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-700 text-xs text-slate-400">
+            <p><i class="fa-solid fa-circle-info mr-1"></i> Basado en la Guía de Investigación de Mercados.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-y-auto p-8">
+        
+        <!-- ================= SIMULACIÓN 1: PLATAFORMA EDUCATIVA ================= -->
+        <div id="sim1" class="tab-content active max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-brand-orange text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 1</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Análisis Causal de Abandono (Churn)</h2>
+                <p class="text-brand-gray mt-2">Simula cómo variables clave impactan la tasa de abandono en una plataforma educativa virtual.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-sliders text-brand-blue mr-2"></i>Variables Independientes</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Precio Mensual ($) <span id="s1-val-precio" class="font-bold text-brand-orange">25</span>
+                            </label>
+                            <input type="range" id="s1-precio" min="10" max="100" value="25" oninput="updateSim1()">
+                            <p class="text-xs text-slate-500 mt-1">Impacta la sensibilidad económica.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Calidad de Contenido (1-10) <span id="s1-val-calidad" class="font-bold text-brand-blue">7</span>
+                            </label>
+                            <input type="range" id="s1-calidad" min="1" max="10" value="7" oninput="updateSim1()">
+                            <p class="text-xs text-slate-500 mt-1">Valor percibido del material.</p>
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Experiencia de Usuario - UX (1-10) <span id="s1-val-ux" class="font-bold text-brand-blue">6</span>
+                            </label>
+                            <input type="range" id="s1-ux" min="1" max="10" value="6" oninput="updateSim1()">
+                            <p class="text-xs text-slate-500 mt-1">Facilidad de uso de la plataforma.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
+                        <strong class="text-brand-navy block mb-1">Insight Esperado:</strong>
+                        Observa cómo la reducción de la calidad o un precio muy alto disparan el abandono. En investigación causal, esto se modela mediante ecuaciones de regresión.
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="col-span-1 lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI Churn -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Tasa de Abandono Proyectada</h4>
+                            <div class="text-6xl font-bold text-brand-orange mt-2 mb-2" id="s1-kpi-churn">24%</div>
+                            <p class="text-sm text-slate-500" id="s1-kpi-status">Nivel Crítico</p>
+                        </div>
+                        <!-- KPI Retencion -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Tasa de Retención</h4>
+                            <div class="text-6xl font-bold text-brand-blue mt-2 mb-2" id="s1-kpi-retencion">76%</div>
+                            <p class="text-sm text-slate-500">Usuarios activos</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafico -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-4 text-brand-navy">Motivos Principales de Abandono (Proporción)</h4>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chartSim1"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SIMULACIÓN 2: CAFETERÍA UNIVERSITARIA ================= -->
+        <div id="sim2" class="tab-content max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-brand-blue text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 2</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Diseño Muestral - Cafetería</h2>
+                <p class="text-brand-gray mt-2">Calculadora interactiva de tamaño de muestra para estimar proporciones con corrección de población finita.</p>
+            </header>
+
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 xl:col-span-4">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-calculator text-brand-blue mr-2"></i>Parámetros Estadísticos</h3>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Población Finita (N)</label>
+                            <input type="number" id="s2-poblacion" value="8500" min="100" max="1000000" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" oninput="updateSim2()">
+                            <p class="text-xs text-slate-500 mt-1">Total de clientes registrados.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nivel de Confianza (Z)</label>
+                            <select id="s2-confianza" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" onchange="updateSim2()">
+                                <option value="1.645">90% (Z=1.645)</option>
+                                <option value="1.96" selected>95% (Z=1.96)</option>
+                                <option value="2.576">99% (Z=2.576)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Margen de Error (e) <span id="s2-val-error" class="font-bold text-brand-orange">5%</span>
+                            </label>
+                            <input type="range" id="s2-error" min="1" max="15" step="0.5" value="5" oninput="updateSim2()">
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Proporción Esperada (p) <span id="s2-val-prop" class="font-bold text-brand-blue">50%</span>
+                            </label>
+                            <input type="range" id="s2-prop" min="5" max="95" step="5" value="50" oninput="updateSim2()">
+                            <p class="text-xs text-slate-500 mt-1">Usa 50% para máxima varianza (escenario conservador).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="xl:col-span-8 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI Muestra Infinita -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-infinity text-6xl"></i></div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Muestra Inicial (Pob. Infinita)</h4>
+                            <div class="text-5xl font-bold text-brand-navy mt-3 mb-1" id="s2-kpi-n-inf">384</div>
+                            <p class="text-sm text-slate-500 font-mono text-xs mt-2 bg-slate-100 p-2 rounded">n = (Z² × p × q) / e²</p>
+                        </div>
+                        
+                        <!-- KPI Muestra Finita -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-2 border-brand-blue relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 text-brand-blue"><i class="fa-solid fa-bullseye text-6xl"></i></div>
+                            <h4 class="text-sm font-bold text-brand-blue uppercase tracking-wide">Muestra Corregida (Pob. Finita)</h4>
+                            <div class="text-6xl font-bold text-brand-blue mt-2 mb-1" id="s2-kpi-n-fin">367</div>
+                            <p class="text-sm text-slate-500 font-mono text-xs mt-2 bg-blue-50 p-2 rounded text-blue-800">nf = n / (1 + (n-1)/N)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribucion Estratificada -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-1 text-brand-navy">Asignación Proporcional por Estratos</h4>
+                        <p class="text-sm text-slate-500 mb-4">Ejemplo simulando 4 años universitarios como estratos.</p>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chartSim2"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SIMULACIÓN 3: BEBIDA SALUDABLE ================= -->
+        <div id="sim3" class="tab-content max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-brand-navy text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 3</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Sensibilidad de Precio e Intención de Compra</h2>
+                <p class="text-brand-gray mt-2">Simula el impacto del precio y atributos del producto en la probabilidad de compra del segmento joven.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-tags text-brand-blue mr-2"></i>Atributos del Producto</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Precio Venta Público (Bs) <span id="s3-val-precio" class="font-bold text-brand-orange">15</span>
+                            </label>
+                            <input type="range" id="s3-precio" min="5" max="30" value="15" step="1" oninput="updateSim3()">
+                            <p class="text-xs text-slate-500 mt-1">Precio por botella de 500ml.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Nivel de Azúcar Añadida (g) <span id="s3-val-azucar" class="font-bold text-brand-blue">5g</span>
+                            </label>
+                            <input type="range" id="s3-azucar" min="0" max="25" value="5" oninput="updateSim3()">
+                            <p class="text-xs text-slate-500 mt-1">El segmento joven valora opciones bajas en azúcar.</p>
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Inversión en Promoción (Escala 1-10) <span id="s3-val-promo" class="font-bold text-brand-blue">5</span>
+                            </label>
+                            <input type="range" id="s3-promo" min="1" max="10" value="5" oninput="updateSim3()">
+                        </div>
+                    </div>
+
+                    <div class="mt-8">
+                        <div class="p-4 rounded-lg text-sm font-medium" id="s3-diagnostico-box">
+                            <!-- Inyectado via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="col-span-1 lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI Intencion -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Probabilidad de Compra</h4>
+                            <div class="text-6xl font-bold mt-2 mb-2" id="s3-kpi-intencion">45%</div>
+                            <p class="text-sm text-slate-500">Intención declarada "Definitivamente compraría"</p>
+                        </div>
+                        <!-- KPI Valor Percibido -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Valor Percibido (Relación Calidad/Precio)</h4>
+                            <div class="flex items-center gap-2 mt-4 mb-2 text-3xl text-yellow-400" id="s3-kpi-estrellas">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-2" id="s3-kpi-valor-texto">Regular</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafico -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-4 text-brand-navy">Simulación de Sensibilidad al Precio (Curva de Demanda)</h4>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chartSim3"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SIMULACIÓN 4: LEALTAD Y NPS ================= -->
+        <div id="sim4" class="tab-content max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-green-600 text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 4</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Medición de Lealtad (Net Promoter Score)</h2>
+                <p class="text-brand-gray mt-2">Evalúa cómo la proporción de clientes satisfechos vs. insatisfechos impacta el indicador de recomendación neta.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-users-viewfinder text-brand-blue mr-2"></i>Respuestas de la Encuesta</h3>
+                    <p class="text-xs text-slate-500 mb-4">Pregunta: "En una escala del 0 al 10, ¿qué tan probable es que recomiende nuestro servicio?"</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-green-700 mb-1">
+                                Promotores (9-10) <span id="s4-val-prom" class="font-bold">50</span>
+                            </label>
+                            <input type="range" id="s4-prom" min="0" max="100" value="50" oninput="updateSim4()">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-500 mb-1">
+                                Pasivos (7-8) <span id="s4-val-pas" class="font-bold">30</span>
+                            </label>
+                            <input type="range" id="s4-pas" min="0" max="100" value="30" oninput="updateSim4()">
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-red-600 mb-1">
+                                Detractores (0-6) <span id="s4-val-det" class="font-bold">20</span>
+                            </label>
+                            <input type="range" id="s4-det" min="0" max="100" value="20" oninput="updateSim4()">
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-slate-50 rounded-lg text-sm text-slate-600">
+                        <strong class="text-brand-navy block mb-1">Lógica del NPS:</strong>
+                        Los pasivos se ignoran en el cálculo final. El score se obtiene restando el porcentaje de detractores al porcentaje de promotores.
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="col-span-1 lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI NPS -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Net Promoter Score (NPS)</h4>
+                            <div class="text-6xl font-bold mt-2 mb-2" id="s4-kpi-nps">30</div>
+                            <p class="text-sm font-medium px-3 py-1 rounded-full mt-2" id="s4-kpi-status">Rango Bueno</p>
+                        </div>
+                        <!-- KPI Muestra -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Desglose Porcentual</h4>
+                            <div class="flex justify-between w-full mt-4 text-sm font-bold">
+                                <div class="text-green-600 flex flex-col"><span id="s4-pct-prom" class="text-2xl">50%</span>Promotores</div>
+                                <div class="text-red-600 flex flex-col"><span id="s4-pct-det" class="text-2xl">20%</span>Detractores</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafico -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-4 text-brand-navy">Composición de la Cartera de Clientes</h4>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chartSim4"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SIMULACIÓN 5: DISEÑO CAUSAL (A/B TESTING) ================= -->
+        <div id="sim5" class="tab-content max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-purple-600 text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 5</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Diseño Causal: Experimento A/B</h2>
+                <p class="text-brand-gray mt-2">Aísla el efecto de variables independientes (descuentos) sobre una variable dependiente (conversión) manteniendo constantes otros factores.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-flask-vial text-brand-blue mr-2"></i>Variables Independientes</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                            <label class="flex justify-between text-sm font-medium text-blue-800 mb-1">
+                                Descuento Grupo A (Control) <span id="s5-val-descA" class="font-bold">0%</span>
+                            </label>
+                            <input type="range" id="s5-descA" min="0" max="50" value="0" step="5" oninput="updateSim5()">
+                        </div>
+                        
+                        <div class="p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                            <label class="flex justify-between text-sm font-medium text-purple-800 mb-1">
+                                Descuento Grupo B (Prueba) <span id="s5-val-descB" class="font-bold">20%</span>
+                            </label>
+                            <input type="range" id="s5-descB" min="0" max="50" value="20" step="5" oninput="updateSim5()">
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Fricción del Formulario (1-10) <span id="s5-val-friccion" class="font-bold">3</span>
+                            </label>
+                            <input type="range" id="s5-friccion" min="1" max="10" value="3" oninput="updateSim5()">
+                            <p class="text-xs text-slate-500 mt-1">Variable de control: afecta a ambos grupos por igual.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="col-span-1 lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI A -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wide">Tasa de Conversión A</h4>
+                            <div class="text-5xl font-bold text-brand-navy mt-2" id="s5-kpi-convA">12.5%</div>
+                        </div>
+                        <!-- KPI B -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-2 bg-purple-100 text-purple-800 text-xs font-bold rounded-bl-lg" id="s5-kpi-lift">+0% Lift</div>
+                            <h4 class="text-sm font-bold text-purple-600 uppercase tracking-wide">Tasa de Conversión B</h4>
+                            <div class="text-5xl font-bold text-brand-navy mt-2" id="s5-kpi-convB">18.5%</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafico -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-4 text-brand-navy">Resultados del Experimento</h4>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chartSim5"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SIMULACIÓN 6: CALIDAD DE DATOS (ERROR TOTAL) ================= -->
+        <div id="sim6" class="tab-content max-w-6xl mx-auto">
+            <header class="mb-8">
+                <span class="bg-red-600 text-white text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">Caso Integrador 6</span>
+                <h2 class="font-serif text-3xl font-bold text-brand-navy mt-3">Error Total de la Encuesta</h2>
+                <p class="text-brand-gray mt-2">Visualiza el concepto de que "el tamaño de muestra no lo es todo". Errores de diseño o trabajo de campo destruyen la precisión estadística.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Controles -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h3 class="font-bold text-lg mb-4 text-brand-navy border-b pb-2"><i class="fa-solid fa-chart-radar text-brand-blue mr-2"></i>Fuentes de Error</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Tamaño de Muestra (n) <span id="s6-val-n" class="font-bold">400</span>
+                            </label>
+                            <input type="range" id="s6-n" min="50" max="2000" value="400" step="50" oninput="updateSim6()">
+                            <p class="text-xs text-slate-500 mt-1">Define el Error Muestral Estadístico (Teórico).</p>
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Tasa de No Respuesta (%) <span id="s6-val-noresp" class="font-bold text-brand-orange">20%</span>
+                            </label>
+                            <input type="range" id="s6-noresp" min="0" max="80" value="20" oninput="updateSim6()">
+                            <p class="text-xs text-slate-500 mt-1">Genera sesgo si quienes no responden son diferentes.</p>
+                        </div>
+
+                        <div>
+                            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+                                Sesgo de Redacción/Cuestionario <span id="s6-val-sesgo" class="font-bold text-red-600">Nivel 2</span>
+                            </label>
+                            <input type="range" id="s6-sesgo" min="0" max="10" value="2" oninput="updateSim6()">
+                            <p class="text-xs text-slate-500 mt-1">Preguntas mal formuladas o inducidas (Error de medición).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="col-span-1 lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KPI Teorico -->
+                        <div class="bg-slate-100 p-6 rounded-xl shadow-sm border border-slate-300 text-center">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wide">Margen de Error (Prometido)</h4>
+                            <div class="text-5xl font-bold text-brand-navy mt-2" id="s6-kpi-teorico">±4.9%</div>
+                            <p class="text-xs text-slate-500 mt-2">Lo que dice la fórmula estadística.</p>
+                        </div>
+                        <!-- KPI Real -->
+                        <div class="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200 text-center">
+                            <h4 class="text-sm font-bold text-red-600 uppercase tracking-wide">Margen de Error (Real Estimado)</h4>
+                            <div class="text-5xl font-bold text-red-600 mt-2" id="s6-kpi-real">±8.4%</div>
+                            <p class="text-xs text-red-500 mt-2">Impacto acumulado del trabajo de campo defectuoso.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafico -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="font-bold text-lg mb-4 text-brand-navy">Descomposición del Error de Investigación</h4>
+                        <div class="h-64 relative w-full flex justify-center">
+                            <canvas id="chartSim6"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Navegación de Pestañas ---
+        function switchTab(tabId) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Mostrar el seleccionado
+            document.getElementById(tabId).classList.add('active');
+            
+            // Restablecer estilos de botones
+            document.querySelectorAll('aside button').forEach(btn => {
+                btn.classList.remove('bg-brand-blue', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+            // Activar botón actual
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('text-slate-300');
+            activeBtn.classList.add('bg-brand-blue', 'text-white');
+
+            // Forzar actualización de gráficos por bugs de renderizado en divs ocultos
+            if(tabId === 'sim1' && chart1) chart1.update();
+            if(tabId === 'sim2' && chart2) chart2.update();
+            if(tabId === 'sim3' && chart3) chart3.update();
+            if(tabId === 'sim4' && chart4) chart4.update();
+            if(tabId === 'sim5' && chart5) chart5.update();
+            if(tabId === 'sim6' && chart6) chart6.update();
+        }
+
+        // Variables globales para gráficos
+        let chart1, chart2, chart3, chart4, chart5, chart6;
+
+        // ================= LÓGICA SIMULACIÓN 1: PLATAFORMA EDUCATIVA =================
+        function initSim1() {
+            const ctx = document.getElementById('chartSim1').getContext('2d');
+            chart1 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Precio', 'Contenido', 'UX', 'Otros'],
+                    datasets: [{
+                        label: 'Motivo de Abandono (%)',
+                        data: [40, 30, 20, 10],
+                        backgroundColor: ['#ea580c', '#0369a1', '#475569', '#cbd5e1'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            updateSim1();
+        }
+
+        function updateSim1() {
+            let precio = document.getElementById('s1-precio').value;
+            let calidad = document.getElementById('s1-calidad').value;
+            let ux = document.getElementById('s1-ux').value;
+
+            document.getElementById('s1-val-precio').innerText = precio;
+            document.getElementById('s1-val-calidad').innerText = calidad;
+            document.getElementById('s1-val-ux').innerText = ux;
+
+            // Simulación de regresión logística simple para churn
+            let riesgoPrecio = (precio - 10) / 90 * 50; // 0 a 50%
+            let riesgoCalidad = (10 - calidad) / 9 * 40; // 0 a 40%
+            let riesgoUX = (10 - ux) / 9 * 30; // 0 a 30%
+
+            let churnTotal = Math.min(100, Math.max(5, riesgoPrecio + riesgoCalidad + riesgoUX - 10));
+            let retencion = 100 - churnTotal;
+
+            document.getElementById('s1-kpi-churn').innerText = `${Math.round(churnTotal)}%`;
+            document.getElementById('s1-kpi-retencion').innerText = `${Math.round(retencion)}%`;
+
+            let statusEl = document.getElementById('s1-kpi-status');
+            let churnEl = document.getElementById('s1-kpi-churn');
+            if(churnTotal > 30) {
+                statusEl.innerText = "Nivel Crítico";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full bg-red-100 text-red-800 mt-2 inline-block";
+                churnEl.className = "text-6xl font-bold mt-2 mb-2 text-red-600";
+            } else if(churnTotal > 15) {
+                statusEl.innerText = "Alerta (Fuga Moderada)";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 mt-2 inline-block";
+                churnEl.className = "text-6xl font-bold mt-2 mb-2 text-brand-orange";
+            } else {
+                statusEl.innerText = "Saludable";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full bg-green-100 text-green-800 mt-2 inline-block";
+                churnEl.className = "text-6xl font-bold mt-2 mb-2 text-green-600";
+            }
+
+            // Normalizar causas para gráfico
+            let totalRiesgo = riesgoPrecio + riesgoCalidad + riesgoUX + 10;
+            chart1.data.datasets[0].data = [
+                (riesgoPrecio/totalRiesgo)*100, 
+                (riesgoCalidad/totalRiesgo)*100, 
+                (riesgoUX/totalRiesgo)*100, 
+                (10/totalRiesgo)*100
+            ];
+            chart1.update();
+        }
+
+        // ================= LÓGICA SIMULACIÓN 2: CAFETERÍA =================
+        function initSim2() {
+            const ctx = document.getElementById('chartSim2').getContext('2d');
+            chart2 = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['1er Año (35%)', '2do Año (25%)', '3er Año (22%)', '4to Año (18%)'],
+                    datasets: [{
+                        data: [0, 0, 0, 0], // Se llena en update
+                        backgroundColor: ['#0369a1', '#38bdf8', '#ea580c', '#fb923c'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+            updateSim2();
+        }
+
+        function updateSim2() {
+            let N = parseInt(document.getElementById('s2-poblacion').value);
+            let Z = parseFloat(document.getElementById('s2-confianza').value);
+            let e = parseFloat(document.getElementById('s2-error').value) / 100;
+            let p = parseFloat(document.getElementById('s2-prop').value) / 100;
+            let q = 1 - p;
+
+            document.getElementById('s2-val-error').innerText = `${(e*100).toFixed(1)}%`;
+            document.getElementById('s2-val-prop').innerText = `${(p*100).toFixed(0)}%`;
+
+            // Muestra Infinita n = (Z^2 * p * q) / e^2
+            let n_inf = (Math.pow(Z, 2) * p * q) / Math.pow(e, 2);
+            document.getElementById('s2-kpi-n-inf').innerText = Math.round(n_inf);
+
+            // Muestra Finita nf = n / (1 + (n-1)/N)
+            let n_fin = n_inf;
+            if(N > 1) {
+                n_fin = n_inf / (1 + (n_inf - 1) / N);
+            }
+            let n_final = Math.round(n_fin);
+            document.getElementById('s2-kpi-n-fin').innerText = n_final;
+
+            // Actualizar gráfico estratificado
+            chart2.data.datasets[0].data = [
+                Math.round(n_final * 0.35),
+                Math.round(n_final * 0.25),
+                Math.round(n_final * 0.22),
+                Math.round(n_final * 0.18)
+            ];
+            chart2.update();
+        }
+
+        // ================= LÓGICA SIMULACIÓN 3: BEBIDA SALUDABLE =================
+        function initSim3() {
+            const ctx = document.getElementById('chartSim3').getContext('2d');
+            chart3 = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['5 Bs', '10 Bs', '15 Bs', '20 Bs', '25 Bs', '30 Bs'],
+                    datasets: [{
+                        label: 'Intención de Compra (%)',
+                        data: [],
+                        borderColor: '#ea580c',
+                        backgroundColor: 'rgba(234, 88, 12, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            updateSim3();
+        }
+
+        function updateSim3() {
+            let precio = parseFloat(document.getElementById('s3-precio').value);
+            let azucar = parseFloat(document.getElementById('s3-azucar').value);
+            let promo = parseFloat(document.getElementById('s3-promo').value);
+
+            document.getElementById('s3-val-precio').innerText = precio;
+            document.getElementById('s3-val-azucar').innerText = `${azucar}g`;
+            document.getElementById('s3-val-promo').innerText = promo;
+
+            // Función para curva de demanda y cálculo de intención
+            function calcularIntencion(p, a, prom) {
+                let base = 80; // Interés base alto por ser novedad
+                
+                // Efecto Promoción (+ promo sube base)
+                base = base + (prom * 2);
+
+                // Sensibilidad al Precio
+                let penalizacionPrecio = (p > 10) ? Math.pow(p - 10, 1.2) * 1.5 : 0;
+                
+                // Penalización por azúcar (óptimo 4g - 8g para sabor sin ser muy dulce)
+                let penalizacionAzucar = 0;
+                if(a > 12) penalizacionAzucar = (a - 12) * 2; // Muy azucarado lo rechazan
+                if(a < 2) penalizacionAzucar = (2 - a) * 5; // Muy desabrido lo rechazan
+
+                let intencion = base - penalizacionPrecio - penalizacionAzucar;
+                return Math.min(100, Math.max(0, intencion));
+            }
+
+            let intencionActual = calcularIntencion(precio, azucar, promo);
+            
+            // Actualizar KPI Intención
+            let colorTexto = "text-brand-navy";
+            if(intencionActual > 60) colorTexto = "text-green-600";
+            else if(intencionActual < 30) colorTexto = "text-red-500";
+            
+            const intencionEl = document.getElementById('s3-kpi-intencion');
+            intencionEl.innerText = `${intencionActual.toFixed(1)}%`;
+            intencionEl.className = `text-6xl font-bold mt-2 mb-2 ${colorTexto}`;
+
+            // Actualizar Estrellas de Valor
+            let estrellasHTML = "";
+            let estrellasCuenta = 0;
+            
+            // Valor es la relación beneficio (promo/sabor) vs costo (precio)
+            let scoreValor = (promo * 10 - (Math.abs(azucar - 6)*2)) / precio;
+            
+            if(scoreValor > 4) estrellasCuenta = 5;
+            else if(scoreValor > 3) estrellasCuenta = 4;
+            else if(scoreValor > 1.5) estrellasCuenta = 3;
+            else if(scoreValor > 0.8) estrellasCuenta = 2;
+            else estrellasCuenta = 1;
+
+            for(let i=1; i<=5; i++) {
+                if(i <= estrellasCuenta) estrellasHTML += '<i class="fa-solid fa-star"></i>';
+                else estrellasHTML += '<i class="fa-regular fa-star"></i>';
+            }
+            document.getElementById('s3-kpi-estrellas').innerHTML = estrellasHTML;
+            
+            const etiquetasValor = {1: "Muy Malo", 2: "Malo", 3: "Regular", 4: "Bueno", 5: "Excelente"};
+            document.getElementById('s3-kpi-valor-texto').innerText = etiquetasValor[estrellasCuenta];
+
+            // Cuadro de Diagnóstico
+            const diagBox = document.getElementById('s3-diagnostico-box');
+            if(intencionActual >= 60) {
+                diagBox.className = "p-4 rounded-lg text-sm font-medium bg-green-50 text-green-800 border border-green-200";
+                diagBox.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i><strong>Decisión:</strong> Alta viabilidad de lanzamiento. Configuración óptima de producto/precio.';
+            } else if (intencionActual >= 35) {
+                diagBox.className = "p-4 rounded-lg text-sm font-medium bg-yellow-50 text-yellow-800 border border-yellow-200";
+                diagBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-2"></i><strong>Decisión:</strong> Revisar propuesta de valor. Ajustar precio o incrementar inversión publicitaria.';
+            } else {
+                diagBox.className = "p-4 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200";
+                diagBox.innerHTML = '<i class="fa-solid fa-xmark-circle mr-2"></i><strong>Decisión:</strong> Producto inviable en estas condiciones. Alta barrera de precio o rechazo a formulación.';
+            }
+
+            // Actualizar Curva de Demanda en el Gráfico
+            const preciosEjeX = [5, 10, 15, 20, 25, 30];
+            const datosCurva = preciosEjeX.map(p => calcularIntencion(p, azucar, promo));
+            
+            chart3.data.datasets[0].data = datosCurva;
+            chart3.update();
+        }
+
+        // ================= LÓGICA SIMULACIÓN 4: NPS =================
+        function initSim4() {
+            const ctx = document.getElementById('chartSim4').getContext('2d');
+            chart4 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Promotores (9-10)', 'Pasivos (7-8)', 'Detractores (0-6)'],
+                    datasets: [{
+                        data: [50, 30, 20],
+                        backgroundColor: ['rgba(22, 163, 74, 0.8)', 'rgba(148, 163, 184, 0.6)', 'rgba(220, 38, 38, 0.8)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } },
+                    cutout: '65%'
+                }
+            });
+            updateSim4();
+        }
+
+        function updateSim4() {
+            let prom = parseInt(document.getElementById('s4-prom').value);
+            let pas = parseInt(document.getElementById('s4-pas').value);
+            let det = parseInt(document.getElementById('s4-det').value);
+
+            document.getElementById('s4-val-prom').innerText = prom;
+            document.getElementById('s4-val-pas').innerText = pas;
+            document.getElementById('s4-val-det').innerText = det;
+
+            let total = prom + pas + det;
+            if(total === 0) total = 1; // Prevenir NaN
+
+            let pctProm = (prom / total) * 100;
+            let pctDet = (det / total) * 100;
+            let nps = pctProm - pctDet;
+
+            document.getElementById('s4-pct-prom').innerText = `${pctProm.toFixed(1)}%`;
+            document.getElementById('s4-pct-det').innerText = `${pctDet.toFixed(1)}%`;
+            
+            const npsEl = document.getElementById('s4-kpi-nps');
+            const statusEl = document.getElementById('s4-kpi-status');
+            
+            npsEl.innerText = Math.round(nps);
+            
+            if (nps < 0) {
+                npsEl.className = "text-6xl font-bold mt-2 mb-2 text-red-600";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full mt-2 bg-red-100 text-red-800";
+                statusEl.innerText = "Nivel Crítico (Pérdida de clientes)";
+            } else if (nps < 30) {
+                npsEl.className = "text-6xl font-bold mt-2 mb-2 text-yellow-600";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full mt-2 bg-yellow-100 text-yellow-800";
+                statusEl.innerText = "Rango Bueno (Crecimiento estable)";
+            } else if (nps < 70) {
+                npsEl.className = "text-6xl font-bold mt-2 mb-2 text-green-600";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full mt-2 bg-green-100 text-green-800";
+                statusEl.innerText = "Excelente (Fuerte lealtad)";
+            } else {
+                npsEl.className = "text-6xl font-bold mt-2 mb-2 text-blue-600";
+                statusEl.className = "text-sm font-medium px-3 py-1 rounded-full mt-2 bg-blue-100 text-blue-800";
+                statusEl.innerText = "Clase Mundial";
+            }
+
+            chart4.data.datasets[0].data = [prom, pas, det];
+            chart4.update();
+        }
+
+        // ================= LÓGICA SIMULACIÓN 5: DISEÑO CAUSAL =================
+        function initSim5() {
+            const ctx = document.getElementById('chartSim5').getContext('2d');
+            chart5 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Variante A (Control)', 'Variante B (Prueba)'],
+                    datasets: [{
+                        label: 'Tasa de Conversión (%)',
+                        data: [0, 0],
+                        backgroundColor: ['rgba(37, 99, 235, 0.8)', 'rgba(147, 51, 234, 0.8)'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 40 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            updateSim5();
+        }
+
+        function updateSim5() {
+            let descA = parseFloat(document.getElementById('s5-descA').value);
+            let descB = parseFloat(document.getElementById('s5-descB').value);
+            let friccion = parseFloat(document.getElementById('s5-friccion').value);
+
+            document.getElementById('s5-val-descA').innerText = `${descA}%`;
+            document.getElementById('s5-val-descB').innerText = `${descB}%`;
+            document.getElementById('s5-val-friccion').innerText = friccion;
+
+            // Fórmulas simuladas
+            let baseConv = 15; // 15% base
+            let penalidadUX = (friccion - 1) * 1.2;
+            
+            let convA = baseConv + (descA * 0.3) - penalidadUX;
+            let convB = baseConv + (descB * 0.3) - penalidadUX;
+            
+            convA = Math.max(0, convA);
+            convB = Math.max(0, convB);
+
+            document.getElementById('s5-kpi-convA').innerText = `${convA.toFixed(1)}%`;
+            document.getElementById('s5-kpi-convB').innerText = `${convB.toFixed(1)}%`;
+
+            let lift = ((convB - convA) / (convA || 1)) * 100;
+            let liftEl = document.getElementById('s5-kpi-lift');
+            if(lift > 0) {
+                liftEl.innerText = `+${lift.toFixed(1)}% Lift`;
+                liftEl.className = "absolute top-0 right-0 p-2 bg-green-100 text-green-800 text-xs font-bold rounded-bl-lg";
+            } else if (lift < 0) {
+                liftEl.innerText = `${lift.toFixed(1)}% Lift`;
+                liftEl.className = "absolute top-0 right-0 p-2 bg-red-100 text-red-800 text-xs font-bold rounded-bl-lg";
+            } else {
+                liftEl.innerText = "0% Lift";
+                liftEl.className = "absolute top-0 right-0 p-2 bg-slate-100 text-slate-800 text-xs font-bold rounded-bl-lg";
+            }
+
+            chart5.data.datasets[0].data = [convA, convB];
+            chart5.update();
+        }
+
+        // ================= LÓGICA SIMULACIÓN 6: ERROR DE ENCUESTA =================
+        function initSim6() {
+            const ctx = document.getElementById('chartSim6').getContext('2d');
+            chart6 = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Error Muestral', 'Sesgo No Respuesta', 'Error de Medición', 'Error de Cobertura'],
+                    datasets: [{
+                        label: 'Magnitud del Error (%)',
+                        data: [0, 0, 0, 2], // Cobertura fija para simulación
+                        backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        r: { 
+                            beginAtZero: true, 
+                            max: 15,
+                            ticks: { display: false }
+                        } 
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            updateSim6();
+        }
+
+        function updateSim6() {
+            let n = parseInt(document.getElementById('s6-n').value);
+            let noResp = parseFloat(document.getElementById('s6-noresp').value);
+            let sesgo = parseFloat(document.getElementById('s6-sesgo').value);
+
+            document.getElementById('s6-val-n').innerText = n;
+            document.getElementById('s6-val-noresp').innerText = `${noResp}%`;
+            document.getElementById('s6-val-sesgo').innerText = `Nivel ${sesgo}`;
+
+            // Error Muestral Estadístico (95% confianza, p=0.5)
+            // Z = 1.96, p = 0.5, q = 0.5. Error = 1.96 * sqrt((0.5*0.5)/n)
+            let errorTeorico = 1.96 * Math.sqrt(0.25 / n) * 100;
+            
+            // Simulación del impacto de errores no muestrales
+            let impactoNoResp = (noResp / 100) * 12; // Si hay 80% no respuesta, aporta hasta 9.6% de error
+            let impactoSesgo = sesgo * 0.8; // Sesgo nivel 10 aporta 8% de error
+            let errorCobertura = 2.0; // Constante
+
+            let errorReal = errorTeorico + impactoNoResp + impactoSesgo + errorCobertura;
+
+            document.getElementById('s6-kpi-teorico').innerText = `±${errorTeorico.toFixed(1)}%`;
+            document.getElementById('s6-kpi-real').innerText = `±${errorReal.toFixed(1)}%`;
+
+            chart6.data.datasets[0].data = [errorTeorico, impactoNoResp, impactoSesgo, errorCobertura];
+            chart6.update();
+        }
+
+        // Inicializar todo al cargar
+        window.onload = function() {
+            initSim1();
+            initSim2();
+            initSim3();
+            initSim4();
+            initSim5();
+            initSim6();
+        };
+
+    </script>
+</body>
+</html>
